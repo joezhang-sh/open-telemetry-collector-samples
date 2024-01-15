@@ -1,0 +1,60 @@
+extensions:
+  health_check: # default port is 13133
+  zpages: # https://github.com/open-telemetry/opentelemetry-collector/tree/main/extension/zpagesextension
+    endpoint: :55679
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+  zipkin:
+
+processors:
+  batch:
+
+exporters:
+  debug:
+    # verbosity: detailed
+  file/traces:
+    path: /log/otel/traces.log
+  file/metrics:
+    path: /log/otel/metrics.log
+  file/logs:
+    path: /log/otel/logs.log
+  otlphttp/grafanacloud:
+    endpoint: https://otlp-gateway-prod-ap-southeast-1.grafana.net/otlp
+    tls:
+      insecure_skip_verify: true
+    headers:
+      Authorization: "{Basic Auth}"
+
+service:
+  pipelines:
+    traces:
+      receivers:
+        - otlp
+      processors: [batch]
+      exporters:
+        - debug 
+        - file/traces
+        - otlphttp/grafanacloud
+    metrics:
+      receivers:
+        - otlp
+      processors: [batch]
+      exporters:
+        - debug 
+        - file/metrics
+        - otlphttp/grafanacloud
+    logs:
+      receivers:
+        - otlp
+      processors: [batch]
+      exporters:
+        - debug 
+        - file/logs
+        - otlphttp/grafanacloud
+  extensions:
+    - health_check
+    - zpages
